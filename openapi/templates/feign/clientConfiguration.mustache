@@ -1,0 +1,263 @@
+package {{configPackage}};
+
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import feign.codec.Encoder;
+import feign.form.FormEncoder;
+import feign.form.spring.SpringFormEncoder;
+import feign.Client;
+import feign.Logger;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.ssl.SSLContexts;
+import org.springframework.util.ResourceUtils;
+import org.springframework.context.annotation.Bean;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.ObjectFactory;
+import org.springframework.cloud.openfeign.support.SpringEncoder;
+import org.springframework.boot.autoconfigure.http.HttpMessageConverters;
+import feign.Request;
+import feign.Response;
+import feign.slf4j.Slf4jLogger;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.springframework.stereotype.Component;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import java.util.HashSet;
+
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+
+import io.micrometer.core.instrument.MeterRegistry;
+
+{{#authMethods}}
+    {{#isBasic}}
+        import feign.auth.BasicAuthRequestInterceptor;
+    {{/isBasic}}
+    {{#-first}}
+        import org.springframework.beans.factory.annotation.Value;
+        import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+    {{/-first}}
+    {{#isOAuth}}
+        import org.springframework.boot.context.properties.ConfigurationProperties;
+    {{/isOAuth}}
+{{/authMethods}}
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+{{#authMethods}}
+    {{#-first}}
+        import org.springframework.context.annotation.Bean;
+    {{/-first}}
+{{/authMethods}}
+import org.springframework.context.annotation.Configuration;
+{{#authMethods}}
+    {{#isOAuth}}
+        import org.springframework.cloud.security.oauth2.client.feign.OAuth2FeignRequestInterceptor;
+        import org.springframework.security.oauth2.client.DefaultOAuth2ClientContext;
+        {{#isApplication}}
+            import org.springframework.security.oauth2.client.token.grant.client.ClientCredentialsResourceDetails;
+        {{/isApplication}}
+        {{#isCode}}
+            import org.springframework.security.oauth2.client.token.grant.code.AuthorizationCodeResourceDetails;
+        {{/isCode}}
+        {{#isImplicit}}
+            import org.springframework.security.oauth2.client.token.grant.implicit.ImplicitResourceDetails;
+        {{/isImplicit}}
+        {{#isPassword}}
+            import org.springframework.security.oauth2.client.token.grant.password.ResourceOwnerPasswordResourceDetails;
+        {{/isPassword}}
+    {{/isOAuth}}
+{{/authMethods}}
+
+
+@EnableConfigurationProperties
+public class ClientConfiguration {
+
+@Bean
+public CustomLogger customFeignRequestLogging() {
+return new CustomLogger();
+}
+
+public class CustomLogger extends feign.Logger {
+private final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger("FeignLogger");
+
+@Value("#{${feign.logging.maskHeader:{'Authorization'}}}")
+private Set
+<String> maskHeader;
+
+    private Request createRequest(Request request) {
+    return Request.create(
+    request.httpMethod(),
+    request.url(),
+    request.headers().entrySet().stream()
+    .collect(
+    Collectors.toUnmodifiableMap(
+    Map.Entry::getKey,
+    this::maskValue
+    )
+    ),
+    request.body(),
+    request.charset(),
+    request.requestTemplate());
+    }
+
+    private Response createResponse(Response response) {
+    return response.toBuilder().headers(response.headers().entrySet().stream().collect(
+    Collectors.toUnmodifiableMap(
+    Map.Entry::getKey,
+    this::maskValue
+    )
+    )).build();
+    }
+
+    private Collection
+    <String> maskValue(Map.Entry
+        <String
+        , Collection
+        <String>> entry) {
+            if (maskHeader.contains(entry.getKey())) {
+            return entry.getValue().stream().map(s -> "***").collect(Collectors.toUnmodifiableList());
+            } else return entry.getValue();
+            }
+
+            @Override
+            protected void logRequest(String configKey, Level logLevel, Request request) {
+            super.logRequest(configKey, logLevel, createRequest(request));
+            }
+
+            @Override
+            protected Response logAndRebufferResponse(String configKey, Level logLevel, Response response, long
+            elapsedTime) throws IOException {
+            return super.logAndRebufferResponse(configKey, logLevel, createResponse(response), elapsedTime);
+            }
+
+            @Override
+            protected void log(String configKey, String format, Object... args) {
+            this.logger.info(String.format(methodTag(configKey) + format, args));
+            }
+
+            }
+
+{{#authMethods}}
+    {{#isBasic}}
+        @Value("${{openbrace}}{{#lambda.lowercase}}{{{title}}}{{/lambda.lowercase}}.security.{{{name}}}.username:{{closebrace}}")
+        private String {{{name}}}Username;
+
+        @Value("${{openbrace}}{{#lambda.lowercase}}{{{title}}}{{/lambda.lowercase}}.security.{{{name}}}.password:{{closebrace}}")
+        private String {{{name}}}Password;
+
+        @Bean
+        @ConditionalOnProperty(name = "{{#lambda.lowercase}}{{{title}}}{{/lambda.lowercase}}.security.{{{name}}}.username")
+        public BasicAuthRequestInterceptor {{{name}}}RequestInterceptor() {
+        return new BasicAuthRequestInterceptor(this.{{{name}}}Username, this.{{{name}}}Password);
+        }
+
+    {{/isBasic}}
+    {{#isApiKey}}
+        {{^vendorExtensions}}
+            @Value("${{openbrace}}{{#lambda.lowercase}}{{{title}}}{{/lambda.lowercase}}.security.{{{name}}}.key:{{closebrace}}")
+            private String {{{name}}}Key;
+
+            @Bean
+            @ConditionalOnProperty(name = "{{{serviceName}}}.security.{{{name}}}.key")
+            public ApiKeyRequestInterceptor {{{name}}}RequestInterceptor() {
+            return new ApiKeyRequestInterceptor({{#isKeyInHeader}}"header"{{/isKeyInHeader}}{{^isKeyInHeader}}"query"{{/isKeyInHeader}}, "{{{keyParamName}}}", this.{{{name}}}Key);
+            }
+        {{/vendorExtensions}}
+        {{#vendorExtensions.x-vtb.epaService}}
+            @Bean
+            public ApiKeyRequestInterceptor {{{name}}}RequestInterceptor({{{vendorExtensions.x-vtb.epaService}}} epa) {
+            return new ApiKeyRequestInterceptor(epa);
+            }
+        {{/vendorExtensions.x-vtb.epaService}}
+        {{#vendorExtensions.x-vtb.epaMgService}}
+            @Bean
+            public ApiKeyRequestInterceptor {{{name}}}RequestInterceptor({{{vendorExtensions.x-vtb.epaMgService}}}
+            epa) {
+            return new ApiKeyRequestInterceptor(epa);
+            }
+        {{/vendorExtensions.x-vtb.epaMgService}}
+    {{/isApiKey}}
+    {{#isOAuth}}
+            @Bean
+            @ConditionalOnProperty("{{#lambda.lowercase}}{{{title}}}{{/lambda.lowercase}}.security.{{{name}}}
+            .client-id")
+            public OAuth2FeignRequestInterceptor {{{name}}}RequestInterceptor() {
+            return new OAuth2FeignRequestInterceptor(new DefaultOAuth2ClientContext(), {{{name}}}ResourceDetails());
+            }
+
+        {{#isCode}}
+            @Bean
+            @ConditionalOnProperty("{{#lambda.lowercase}}{{{title}}}{{/lambda.lowercase}}.security.{{{name}}}.client-id")
+            @ConfigurationProperties("{{#lambda.lowercase}}{{{title}}}{{/lambda.lowercase}}.security.{{{name}}}")
+            public AuthorizationCodeResourceDetails {{{name}}}ResourceDetails() {
+            AuthorizationCodeResourceDetails details = new AuthorizationCodeResourceDetails();
+            details.setAccessTokenUri("{{{tokenUrl}}}");
+            details.setUserAuthorizationUri("{{{authorizationUrl}}}");
+            return details;
+            }
+
+        {{/isCode}}
+        {{#isPassword}}
+            @Bean
+            @ConditionalOnProperty("{{#lambda.lowercase}}{{{title}}}{{/lambda.lowercase}}.security.{{{name}}}.client-id")
+            @ConfigurationProperties("{{#lambda.lowercase}}{{{title}}}{{/lambda.lowercase}}.security.{{{name}}}")
+            public ResourceOwnerPasswordResourceDetails {{{name}}}ResourceDetails() {
+            ResourceOwnerPasswordResourceDetails details = new ResourceOwnerPasswordResourceDetails();
+            details.setAccessTokenUri("{{{tokenUrl}}}");
+            return details;
+            }
+
+        {{/isPassword}}
+        {{#isApplication}}
+            @Bean
+            @ConditionalOnProperty("{{#lambda.lowercase}}{{{title}}}{{/lambda.lowercase}}.security.{{{name}}}.client-id")
+            @ConfigurationProperties("{{#lambda.lowercase}}{{{title}}}{{/lambda.lowercase}}.security.{{{name}}}")
+            public ClientCredentialsResourceDetails {{{name}}}ResourceDetails() {
+            ClientCredentialsResourceDetails details = new ClientCredentialsResourceDetails();
+            details.setAccessTokenUri("{{{tokenUrl}}}");
+            return details;
+            }
+
+        {{/isApplication}}
+        {{#isImplicit}}
+            @Bean
+            @ConditionalOnProperty("{{#lambda.lowercase}}{{{title}}}{{/lambda.lowercase}}.security.{{{name}}}.client-id")
+            @ConfigurationProperties("{{#lambda.lowercase}}{{{title}}}{{/lambda.lowercase}}.security.{{{name}}}")
+            public ImplicitResourceDetails {{{name}}}ResourceDetails() {
+            ImplicitResourceDetails details = new ImplicitResourceDetails();
+            details.setUserAuthorizationUri("{{{authorizationUrl}}}");
+            return details;
+            }
+
+        {{/isImplicit}}
+    {{/isOAuth}}
+{{/authMethods}}
+
+    @Bean
+{{=<% %>=}}
+            @ConditionalOnProperty({"<%serviceName%>.security.keystore.path" ,
+            "<%serviceName%>.security.keystore.password"
+            ,"<%serviceName%>.security.truststore.path","<%serviceName%>.security.truststore.password"})
+            public Client client(
+            @Value("${<%serviceName%>.security.keystore.path}") String keyStorePath,
+            @Value("${<%serviceName%>.security.keystore.password}") String keyStorePassword,
+            @Value("${<%serviceName%>.security.truststore.path}") String trustStorePath,
+            @Value("${<%serviceName%>.security.truststore.password}") String trustStorePassword,
+            MeterRegistry meterRegistry
+            <%={{ }}=%>
+            ) throws IOException, UnrecoverableKeyException, CertificateException, NoSuchAlgorithmException,
+            KeyStoreException, KeyManagementException {
+            return new Client.Default(SSLContexts.custom()
+            .loadKeyMaterial(ResourceUtils.getFile(keyStorePath), keyStorePassword.toCharArray(),
+            keyStorePassword.toCharArray())
+            .loadTrustMaterial(ResourceUtils.getFile(trustStorePath), trustStorePassword.toCharArray())
+            .build().getSocketFactory(),
+            new NoopHostnameVerifier(), false);
+            }
+            }

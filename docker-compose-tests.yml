@@ -1,9 +1,0 @@
-version: '3'
-
-services:
-  tinkoff-invest-robot-tests:
-    image: 'romanew/invest:latest-tests'
-    container_name: tinkoff-invest-robot-tests
-    environment:
-      - tinkoff.is-token-sandbox=true
-      - tinkoff.token=${TINKOFF_TOKEN_SANDBOX}

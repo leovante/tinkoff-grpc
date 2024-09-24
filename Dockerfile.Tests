@@ -1,6 +1,0 @@
-FROM gradle:8.6.0-jdk21-alpine
-WORKDIR /app
-COPY . ./
-RUN gradle clean class --info
-
-ENTRYPOINT ["gradle", "test", "--info"]

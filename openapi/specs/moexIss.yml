@@ -1,0 +1,463 @@
+openapi: 3.0.1
+info:
+  title: moex-iss
+  description: My API
+  contact:
+    name: Dmitry
+    url: https://t.me/leovante
+    email: leovante@live.ru
+  version: "0.1"
+servers:
+  - url: http://localhost:24300
+paths:
+  /iss/engines/stock/markets/shares/boards/{board}/securities:
+    get:
+      operationId: fetchSecuritiesStream
+      parameters:
+        - name: board
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: fetchSecuritiesStream 200 response
+          content:
+            application/x-json-stream:
+              schema:
+                type: object
+  /iss/engines/stock/markets/shares/boards/{board}/securities/columns:
+    get:
+      operationId: fetchColumnsStream
+      parameters:
+        - name: board
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: fetchColumnsStream 200 response
+          content:
+            application/x-json-stream:
+              schema:
+                type: object
+  /iss/engines/stock/markets/shares/boards/{board}/securities/{security}/candles:
+    get:
+      operationId: fetchSecuritiesCandlesStream
+      parameters:
+        - name: security
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: board
+          in: path
+          required: true
+          schema:
+            type: string
+            nullable: true
+        - name: fromDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: tillDate
+          in: query
+          schema:
+            type: string
+            format: date
+            nullable: true
+        - name: interval
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: reverse
+          in: query
+          required: true
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: fetchSecuritiesCandlesStream 200 response
+          content:
+            application/x-json-stream:
+              schema:
+                $ref: "#/components/schemas/Row"
+  /iss/engines/stock/markets/shares/securities/{security}/candles:
+    get:
+      operationId: getSecuritiesCandlesStream
+      parameters:
+        - name: security
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: fromDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: tillDate
+          in: query
+          schema:
+            type: string
+            format: date
+            nullable: true
+        - name: interval
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: reverse
+          in: query
+          required: true
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: getSecuritiesCandlesStream 200 response
+          content:
+            application/x-json-stream:
+              schema:
+                $ref: "#/components/schemas/Row"
+  /iss/engines/stock/markets/shares/securities/{security}/candles/sync:
+    get:
+      operationId: getSecuritiesCandlesSync
+      parameters:
+        - name: security
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: fromDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: tillDate
+          in: query
+          schema:
+            type: string
+            format: date
+            nullable: true
+        - name: interval
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: reverse
+          in: query
+          required: true
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: getSecuritiesCandlesSync 200 response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Row"
+  /iss/engines/stock/markets/shares/securities/{security}/trades:
+    get:
+      operationId: getSecuritiesTradesStream
+      parameters:
+        - name: engine
+          in: query
+          required: true
+          schema:
+            type: string
+            default: stock
+        - name: market
+          in: query
+          required: true
+          schema:
+            type: string
+            default: shares
+        - name: security
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tradeno
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+            default: 0
+        - name: start
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int32
+            default: 0
+      responses:
+        "200":
+          description: getSecuritiesTradesStream 200 response
+          content:
+            application/x-json-stream:
+              schema:
+                type: array
+                items:
+                  type: object
+  /iss/history/engines/stock/markets/shares/boards/{board}/securities/{security}:
+    get:
+      operationId: getSecuritiesHistoryStream
+      parameters:
+        - name: security
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: board
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: fromDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: tillDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: getSecuritiesHistoryStream 200 response
+          content:
+            application/x-json-stream:
+              schema:
+                type: array
+                items:
+                  type: object
+  /iss/securities:
+    get:
+      operationId: getSecuritiesStream
+      parameters:
+        - name: isTrading
+          in: query
+          required: true
+          schema:
+            type: string
+            default: "1"
+        - name: engine
+          in: query
+          required: true
+          schema:
+            type: string
+            default: stock
+        - name: market
+          in: query
+          required: true
+          schema:
+            type: string
+            default: shares
+        - name: start
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int32
+            default: 0
+        - name: lang
+          in: query
+          required: true
+          schema:
+            type: string
+            default: ru
+        - name: q
+          in: query
+          schema:
+            type: string
+            description: "Поиск инструмента по части Кода, Названию, ISIN, Идентифик\
+            атору Эмитента, Номеру гос.регистрации. Например: https://iss.moex.com/iss/securities.xml?q=MOEX."
+            nullable: true
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            format: int32
+            nullable: true
+            default: 100
+        - name: issOnly
+          in: query
+          required: true
+          schema:
+            type: string
+            default: trade_engines
+      responses:
+        "200":
+          description: getSecuritiesStream 200 response
+          content:
+            application/x-json-stream:
+              schema:
+                $ref: "#/components/schemas/Row_1"
+  /specifications/securities/listing/{listing}:
+    get:
+      operationId: getSecuritiesStream_1
+      parameters:
+        - name: listing
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: getSecuritiesStream_1 200 response
+          content:
+            application/x-json-stream:
+              schema:
+                $ref: "#/components/schemas/rSecuritiesSpec"
+  /specifications/securities/listing/{listing}/sync:
+    get:
+      operationId: getSecuritiesSpecificationsSync
+      parameters:
+        - name: listing
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: getSecuritiesSpecificationsSync 200 response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/rSecuritiesSpec"
+  /sync/securities:
+    post:
+      operationId: fetchSecuritiesSync
+      responses:
+        "201":
+          description: fetchSecuritiesSync 201 response
+          content:
+            application/json:
+              schema:
+                type: string
+                format: uuid
+components:
+  schemas:
+    Row:
+      required:
+        - begin
+        - close
+        - end
+        - high
+        - low
+        - open
+        - value
+        - volume
+      type: object
+      properties:
+        open:
+          type: number
+          format: double
+        close:
+          type: number
+          format: double
+        high:
+          type: number
+          format: double
+        low:
+          type: number
+          format: double
+        value:
+          type: number
+          format: double
+        volume:
+          type: number
+          format: double
+        begin:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+    Row_1:
+      required:
+        - emitentId
+        - emitentInn
+        - emitentOkpo
+        - emitentTitle
+        - gosreg
+        - groupp
+        - id
+        - isTraded
+        - isin
+        - marketpriceBoardid
+        - name
+        - primaryBoardid
+        - regnumber
+        - secId
+        - shortname
+        - type
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        secId:
+          type: string
+        shortname:
+          type: string
+        regnumber:
+          type: string
+        name:
+          type: string
+        isin:
+          type: string
+        isTraded:
+          type: integer
+          format: int32
+        emitentId:
+          type: integer
+          format: int32
+        emitentTitle:
+          type: string
+        emitentInn:
+          type: string
+        emitentOkpo:
+          type: string
+        gosreg:
+          type: string
+        type:
+          type: string
+        groupp:
+          type: string
+        primaryBoardid:
+          type: string
+        marketpriceBoardid:
+          type: string
+    rSecuritiesSpec:
+      required:
+        - isin
+        - secId
+      type: object
+      properties:
+        secId:
+          type: string
+        isin:
+          type: string

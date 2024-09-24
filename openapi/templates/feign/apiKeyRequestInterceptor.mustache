@@ -1,0 +1,71 @@
+package {{configPackage}};
+
+import feign.RequestInterceptor;
+import feign.RequestTemplate;
+import feign.Util;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+
+
+public class ApiKeyRequestInterceptor implements RequestInterceptor {
+{{^authMethods}}
+    @Override
+    public void apply(RequestTemplate requestTemplate) {}
+{{/authMethods}}
+{{#authMethods}}
+    {{^vendorExtensions.x-vtb}}
+        private final String location;
+        private final String name;
+        private String value;
+
+        public ApiKeyRequestInterceptor(String location, String name, String value) {
+        Util.checkNotNull(location, "location", new Object[0]);
+        Util.checkNotNull(name, "name", new Object[0]);
+        Util.checkNotNull(value, "value", new Object[0]);
+        this.location = location;
+        this.name = name;
+        this.value = value;
+        }
+
+        @Override
+        public void apply(RequestTemplate requestTemplate) {
+        switch (location) {
+        case "header":
+        requestTemplate.header(name, value);
+        break;
+        case "query":
+        requestTemplate.query(name, value);
+        break;
+        }
+        }
+    {{/vendorExtensions.x-vtb}}
+    {{#vendorExtensions.x-vtb.epaService}}
+        private final {{{vendorExtensions.x-vtb.epaService}}} epa;
+
+        public ApiKeyRequestInterceptor({{{vendorExtensions.x-vtb.epaService}}} epa) {
+        this.epa=epa;
+        }
+
+        @Override
+        public void apply(RequestTemplate requestTemplate) {
+        requestTemplate.header("Authorization","Bearer "+ epa.getToken().getAccessToken());
+        }
+    {{/vendorExtensions.x-vtb.epaService}}
+    {{#vendorExtensions.x-vtb.epaMgService}}
+        private final {{{vendorExtensions.x-vtb.epaMgService}}} epa;
+
+        @Value("${mbc.xTykApiKey}")
+        private String xTykApiKey;
+
+        public ApiKeyRequestInterceptor({{{vendorExtensions.x-vtb.epaMgService}}} epa) {
+        this.epa=epa;
+        }
+
+        @Override
+        public void apply(RequestTemplate requestTemplate) {
+        requestTemplate.header("Authorization","Bearer "+ epa.getToken().getAccessToken());
+        requestTemplate.header("X-TYK-API-KEY", xTykApiKey);
+        }
+    {{/vendorExtensions.x-vtb.epaMgService}}
+{{/authMethods}}
+}

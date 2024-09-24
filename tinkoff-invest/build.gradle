@@ -1,17 +1,17 @@
 plugins {
-    id 'org.springframework.boot' version '3.2.3'
-    id 'io.spring.dependency-management' version '1.1.4'
+    id 'org.springframework.boot'
+    id 'io.spring.dependency-management'
     id 'java'
 }
 
-configurations {
-    compileOnly {
-        extendsFrom annotationProcessor
+group = 'ru.tinkoff.invest'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
-
-group = 'ru.tinkoff.invest'
-version = '1.0.0'
 
 dependencies {
     // spring
@@ -58,6 +58,12 @@ dependencies {
     testImplementation 'org.testcontainers:postgresql:1.15.3'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
 }
 
 test {

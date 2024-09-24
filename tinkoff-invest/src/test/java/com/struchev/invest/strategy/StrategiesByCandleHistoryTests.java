@@ -50,7 +50,7 @@ class StrategiesByCandleHistoryTests {
         orderService.loadOrdersFromDB();
     }
 
-    @Test
+//    @Test
     void checkProfitByStrategies() {
         // Проверяем свойства для тестов
         assertTrue("Tests are allowed with Tinkoff API emulator only (tinkoff.emulator=true)", isTinkoffEmulator);

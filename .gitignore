@@ -1,5 +1,6 @@
 node_modules
 README.md
+README.md.old
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar

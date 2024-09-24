@@ -1,1 +1,27 @@
-rootProject.name = 'tinkoff-invest-robot'
+pluginManagement {
+
+    repositories {
+        gradlePluginPortal()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+            allowInsecureProtocol = true
+        }
+        maven {
+            url "http://repo.spring.io/plugins-release"
+            allowInsecureProtocol = true
+        }
+        mavenLocal()
+        mavenCentral()
+    }
+
+    plugins {
+        id 'org.springframework.boot' version "${springBootVersion}"
+        id 'io.spring.dependency-management' version "${dependencyManagementVersion}"
+        id 'org.openapi.generator' version "${openApiVersion}"
+    }
+}
+
+rootProject.name = 'tinkoff-adapter'
+
+include("tinkoff-invest")
+include("tinkoff-grpc")
