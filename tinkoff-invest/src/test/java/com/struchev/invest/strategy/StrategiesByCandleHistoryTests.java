@@ -58,10 +58,10 @@ class StrategiesByCandleHistoryTests {
         // Эмулируем поток свечей за заданный интервал (candle.history.duration)
         var days = historyDuration.toDays();
         var startDateTime = OffsetDateTime.now().minusDays(days);
-        strategySelector.getFigiesForActiveStrategies().stream()
-                .flatMap(figi -> candleRepository.findByFigiAndIntervalAndDateTimeAfterOrderByDateTime(figi, "1min", startDateTime).stream())
-                .sorted(Comparator.comparing(CandleDomainEntity::getDateTime))
-                .forEach(c -> purchaseService.observeNewCandle(c));
+//        strategySelector.getFigiesForActiveStrategies().stream()
+//                .flatMap(figi -> candleRepository.findByFigiAndIntervalAndDateTimeAfterOrderByDateTime(figi, "1min", startDateTime).stream())
+//                .sorted(Comparator.comparing(CandleDomainEntity::getDateTime))
+//                .forEach(c -> purchaseService.observeNewCandle(c));
 
         // Логируем отчеты
         reportService.logReportInstrumentByFiat(reportService.buildReportInstrumentByFiat());

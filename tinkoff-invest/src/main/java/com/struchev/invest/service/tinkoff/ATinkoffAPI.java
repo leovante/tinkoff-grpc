@@ -16,7 +16,7 @@ public abstract class ATinkoffAPI implements ITinkoffCommonAPI, ITinkoffOrderAPI
     @Value("${tinkoff.account-id}")
     private String accountId;
 
-    @Value("${tinkoff.is-token-sandbox:false}")
+    @Value("${tinkoff.is-token-sandbox:true}")
     private Boolean isSandboxMode;
 
     private InvestApi api;
@@ -52,4 +52,5 @@ public abstract class ATinkoffAPI implements ITinkoffCommonAPI, ITinkoffOrderAPI
         log.info("Will use Account id {}, name {}", account.getId(), account.getName());
         accountId = account.getId();
     }
+
 }
