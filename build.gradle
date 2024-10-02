@@ -21,8 +21,6 @@ subprojects {
     }
 
     dependencies {
-        project(":tinkoff-grpc")
-        project(":tinkoff-invest")
         implementation "io.springfox:springfox-boot-starter:${springfox}"
         implementation "org.openapitools:jackson-databind-nullable:${jacksonDatabindNullableVersion}"
     }

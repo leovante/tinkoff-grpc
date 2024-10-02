@@ -1,5 +1,4 @@
 pluginManagement {
-
     repositories {
         gradlePluginPortal()
         maven {
@@ -21,7 +20,15 @@ pluginManagement {
     }
 }
 
-rootProject.name = 'tinkoff-adapter'
+rootProject.name = 'tinkoff-provider'
 
-include("tinkoff-invest")
-include("tinkoff-grpc")
+include 'tinkoff-invest'
+include 'tinkoff-provider'
+include 'moex-iss-service-api'
+include 'moex-iss-service-impl'
+include 'telegram-bot-service-impl'
+include 'tinkoff-grpc-service-impl'
+project(':moex-iss-service-api').projectDir = file("adapters/moex-iss-service-api")
+project(':moex-iss-service-impl').projectDir = file("adapters/moex-iss-service-impl")
+project(':telegram-bot-service-impl').projectDir = file("adapters/telegram-bot-service-impl")
+project(':tinkoff-grpc-service-impl').projectDir = file("adapters/tinkoff-grpc-service-impl")

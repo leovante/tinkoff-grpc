@@ -1,0 +1,60 @@
+import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
+
+plugins {
+    id "org.openapi.generator"
+}
+
+group = 'moex-iss-service-api'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+dependencies {
+    implementation 'org.springdoc:springdoc-openapi-ui:1.7.0'
+    implementation 'io.swagger.parser.v3:swagger-parser:2.0.29'
+    implementation 'jakarta.validation:jakarta.validation-api:3.1.0'
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir("$buildDir/generated/src/gen/java")
+            srcDir("$buildDir/generated/src/main/java")
+        }
+    }
+}
+
+file("$projectDir/src/main/resources/static/specs").listFiles().each {
+    def apiName = it.getName().replace(".yml", "")
+    def taskk = tasks.create("openApiGenerate_" + apiName, GenerateTask.class) {
+        generatorName.set("spring")
+        library.set("spring-cloud")
+        inputSpec.set("$projectDir/src/main/resources/static/specs/${apiName}.yml")
+        outputDir.set("$buildDir/generated")
+        templateDir.set("$projectDir/src/main/resources/static/templates/feign")
+        apiPackage.set("ru.tinkoff.adapter.client.${apiName}.api")
+        modelPackage.set("ru.tinkoff.adapter.client.${apiName}.payload")
+        typeMappings = ["OffsetDateTime": "java.time.LocalDateTime"]
+        importMappings = ["OffsetDateTime": "java.time.LocalDateTime"]
+        configOptions = [
+                "useSpringBoot3": "true",
+                "dateLibrary"   : "java8",
+                "configPackage" : "ru.tinkoff.adapter.client.${apiName}.config"
+        ]
+        additionalProperties = [
+                "serviceName": apiName
+        ]
+    }
+    compileJava.dependsOn taskk
+}

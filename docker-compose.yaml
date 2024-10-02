@@ -1,27 +1,6 @@
 version: '3.5'
 services:
 
-  postgres1:
-    container_name: postgres_tinkoff_grpc
-    image: postgres
-    restart: always
-    environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      PGDATA: /data/postgres
-    networks:
-      - my_network
-    ports:
-      - 25017:5432
-    volumes:
-      - postgres:/data/postgres
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
 #  tinkoff-adapter:
 #    container_name: tinkoff_grpc
 #    build:
@@ -47,9 +26,6 @@ services:
 #        limits:
 #          cpus: '0.5'
 #          memory: 300M
-
-volumes:
-  postgres:
 
 networks:
   my_network:
